@@ -10,7 +10,9 @@
       (cons (apply builtin (list a b)) rest))))
 
 (define stdlib
-  (list (list '+ (binop->forth +))))
+  (list (list 'dup (λ (out) (cons (car out) out)))
+        (list '+ (binop->forth +))
+        (list '* (binop->forth *))))
 
 (define (step in out)
   (cond [(null? in) out]
@@ -36,3 +38,5 @@
 (check-equal? (eval '(4 5 6 + +)) '(15))
 
 (check-exn exn:fail? (λ () (eval '(4 5 6 + + unknown))))
+
+(check-equal? (eval '(7 dup +)) '(14))
