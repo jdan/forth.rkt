@@ -122,3 +122,17 @@
 (check-equal? (eval '(#f [ 4 ] [ 10 ] if)) '(10))
 (check-equal? (eval '(4 5 #t [ + ] [ * ] if)) '(9))
 (check-equal? (eval '(4 5 #f [ + ] [ * ] if)) '(20))
+
+; Actual programs
+(check-equal?
+ (eval
+  '(: fac
+      dup 0 =
+      [ drop 1 ] ; return 1
+      [ dup 1 -  ; n, n-1
+            fac  ; n, fac(n-1)
+            * ]  ; n * fac(n-1)
+      if \;
+
+      10 fac))
+ '(3628800))
