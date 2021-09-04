@@ -8,7 +8,7 @@
           [b (cadr out)]
           [rest (cddr out)])
       (values in
-              (cons (apply builtin (list a b)) rest)))))
+              (cons (apply builtin (list b a)) rest)))))
 
 (define stdlib
   (list (list 'dup (λ (in out)
@@ -27,7 +27,10 @@
                                         alternate)
                                     (cdddr out))))))
         (list '+ (binop->forth +))
-        (list '* (binop->forth *))))
+        (list '- (binop->forth -))
+        (list '* (binop->forth *))
+        (list '/ (binop->forth /))
+        (list '= (binop->forth =))))
 
 (define make-env list)
 (define env-input-stack car)
