@@ -11,11 +11,21 @@
               (cons (apply builtin (list a b)) rest)))))
 
 (define stdlib
-  (list (list 'dup (λ (in out) (values in
-                                       (cons (car out) out))))
+  (list (list 'dup (λ (in out)
+                     (values in
+                             (cons (car out) out))))
         (list 'call (λ (in out)
                       (values (append (car out) in)
                               (cdr out))))
+        (list 'if (λ (in out)
+                    (let ([test (caddr out)]
+                          [consequent (cadr out)]
+                          [alternate (car out)])
+                      (values (cons 'call in)
+                              (cons (if test
+                                        consequent
+                                        alternate)
+                                    (cdddr out))))))
         (list '+ (binop->forth +))
         (list '* (binop->forth *))))
 
@@ -38,6 +48,7 @@
 
           ; Literals
           [(or (number? (car in))
+               (boolean? (car in))
                (pair? (car in)))
            (make-env (cdr in)
                      (cons (car in) out)
@@ -100,3 +111,9 @@
 
 ; Function literals
 (check-equal? (eval '(1 [1 +] call)) '(2))
+
+; If statements
+(check-equal? (eval '(#t [ 4 ] [ 10 ] if)) '(4))
+(check-equal? (eval '(#f [ 4 ] [ 10 ] if)) '(10))
+(check-equal? (eval '(4 5 #t [ + ] [ * ] if)) '(9))
+(check-equal? (eval '(4 5 #f [ + ] [ * ] if)) '(20))
