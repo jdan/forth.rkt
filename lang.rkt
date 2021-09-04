@@ -3,14 +3,19 @@
 (require rackunit)
 
 (define (binop->forth builtin)
-  (λ (out)
+  (λ (in out)
     (let ([a (car out)]
           [b (cadr out)]
           [rest (cddr out)])
-      (cons (apply builtin (list a b)) rest))))
+      (values in
+              (cons (apply builtin (list a b)) rest)))))
 
 (define stdlib
-  (list (list 'dup (λ (out) (cons (car out) out)))
+  (list (list 'dup (λ (in out) (values in
+                                       (cons (car out) out))))
+        (list 'call (λ (in out)
+                      (values (append (car out) in)
+                              (cdr out))))
         (list '+ (binop->forth +))
         (list '* (binop->forth *))))
 
@@ -29,12 +34,16 @@
          [out (env-output-stack env)]
          [defs (env-defs env)])
   
-    (cond [(null? in)
-           (make-env in out defs)]
-          [(number? (car in))
+    (cond [(null? in) (make-env in out defs)]
+
+          ; Literals
+          [(or (number? (car in))
+               (pair? (car in)))
            (make-env (cdr in)
                      (cons (car in) out)
                      defs)]
+
+          ; Definitions
           [(definition? (car in))
            (let-values ([; IN  => '(x dup ; hello world)
                          ; OUT => (values '(x dup) '(\; hello world))
@@ -47,7 +56,8 @@
                        out
                        ; Add the definition to our assoc
                        (cons definition defs)))]
-          
+
+          ; User-defined function
           [(assoc (car in) defs)
            (make-env ; Replace the `def` name with its body
             (append (cdr (assoc (car in) defs))
@@ -55,10 +65,11 @@
             out
             defs)]
 
+          ; Standard library function
           [(assoc (car in) stdlib)
-           (make-env (cdr in)
-                     ((cadr (assoc (car in) stdlib)) out)
-                     defs)]
+           (let-values ([(in out)
+                         ((cadr (assoc (car in) stdlib)) (cdr in) out)])
+             (make-env in out defs))]
           
           [else
            (error "Unknown operation --" (car in))])))
@@ -86,3 +97,6 @@
 (check-equal? (eval '(5 : incr 1 + \; incr)) '(6))
 (check-equal? (eval '(: sq dup * \;
                         5 sq sq)) '(625))
+
+; Function literals
+(check-equal? (eval '(1 [1 +] call)) '(2))
