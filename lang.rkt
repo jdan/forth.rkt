@@ -14,6 +14,8 @@
   (list (list 'dup (λ (in out)
                      (values in
                              (cons (car out) out))))
+        (list 'drop (λ (in out)
+                      (values in (cdr out))))
         (list 'call (λ (in out)
                       (values (append (car out) in)
                               (cdr out))))
